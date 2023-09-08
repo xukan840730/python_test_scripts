@@ -30,6 +30,8 @@ def generate_curve(x0, x_goal, halflife_inv, dt, iter_count):
     return xs
 
 
+new_x, new_v = simple_spring_damper_exact_2(0.0, 0.0, 1.0, 2.0, 1.0/30)
+
 dt = 1.0/30
 x_goal = 1.0
 x0 = 0.0
