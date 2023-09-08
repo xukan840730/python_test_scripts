@@ -24,6 +24,19 @@ def double_spring_damper_exact(x, v, xi, vi, x_goal, halflife, dt):
     return new_x, new_v, new_xi, new_vi
 
 
+def timed_spring_damper_exact(x, v, xi, x_goal, t_goal, halflife, dt, apprehension=2.0):
+    min_time = max(t_goal, dt)
+    v_goal = (x_goal - xi) / min_time
+    t_goal_future = dt + apprehension * halflife
+    if t_goal_future < t_goal:
+        x_goal_future = xi + v_goal * t_goal_future
+    else:
+        x_goal_future = x_goal
+    new_x, new_v = simple_spring_damper_exact(x, v, x_goal_future, halflife, dt)
+    new_xi = xi + v_goal * dt
+    return new_x, new_v, new_xi
+
+
 def generate_curve(x0, x_goal, halflife, dt, iter_count):
     xs = [x0]
     x = x0
@@ -45,3 +58,15 @@ def generate_curve_double(x0, x_goal, halflife, dt, iter_count):
         xs.append(x)
     return xs
 
+
+def generate_timed_curve(x0, x_goal, goal_time, halflife, dt, iter_count):
+    xs = [x0]
+    x = x0
+    v = 0.0
+    xi = x
+    t_goal = goal_time
+    for i in range(iter_count):
+        x, v, xi = timed_spring_damper_exact(x, v, xi, x_goal, t_goal, halflife, dt)
+        xs.append(x)
+        t_goal -= dt
+    return xs
