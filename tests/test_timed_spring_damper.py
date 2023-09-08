@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from simple_spring_damper_exact import *
+from simple_spring_damper_exact_inv import *
 
 
 def test_main():
@@ -8,10 +9,15 @@ def test_main():
     x_goal = 1.0
     iter_count = 100
 
-    halflife = 1
+    halflife = 0.5
+    halflife_inv = 1.0 / halflife
     xs1 = generate_timed_curve(x0, x_goal, 1.0, halflife, dt, iter_count)
     xs2 = generate_timed_curve(x0, x_goal, 2.0, halflife, dt, iter_count)
     xs3 = generate_timed_curve(x0, x_goal, 4.0, halflife, dt, iter_count)
+
+    xs1_inv = generate_timed_curve_inv(x0, x_goal, 1.0, halflife_inv, dt, iter_count)
+    xs2_inv = generate_timed_curve_inv(x0, x_goal, 2.0, halflife_inv, dt, iter_count)
+    xs3_inv = generate_timed_curve_inv(x0, x_goal, 4.0, halflife_inv, dt, iter_count)
 
     ts = [0.0] * (iter_count + 1)
     for i in range(len(ts)):
