@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from simple_spring_damper_exact import *
+from spring_tracker.simple_spring_damper_exact import *
 
 
 def test_main():

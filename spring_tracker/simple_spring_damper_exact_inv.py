@@ -1,4 +1,4 @@
-from common import *
+from spring_tracker.common import *
 
 
 def halflife_inv_to_damping(halflife_inv):
