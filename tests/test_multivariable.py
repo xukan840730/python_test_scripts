@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg
 
 
 # single face patch
@@ -25,6 +26,12 @@ class FacePatch:
         t3 = np.dot(f, vertex_deltas[alpha_index])
         return -2 * t3
 
+    def calc_partial_derv_comp(self, vertex_index, alphas, alpha_index, v_target):
+        vertex_deltas = self._deltas[vertex_index]
+        f = v_target - (self._neutral[vertex_index] + np.dot(alphas, vertex_deltas))
+        t3 = np.multiply(f, vertex_deltas[alpha_index])
+        return -2 * t3
+
     def calc_jacobian(self, in_alphas, v_targets):
         num_vertices = self.get_num_vertices()
         assert (v_targets.shape[0] == num_vertices)
@@ -37,6 +44,43 @@ class FacePatch:
                 jacobian[vertex_index, alpha_index] = self.calc_partial_derv(vertex_index, in_alphas, alpha_index, v_target)
 
         return jacobian
+
+    def calc_jacobian_comp(self, in_alphas, v_targets):
+        num_vertices = self.get_num_vertices()
+        assert (v_targets.shape[0] == num_vertices)
+        num_delta_shapes = self.get_num_delta_shapes()
+
+        jacobian = np.zeros((num_vertices * 3, num_delta_shapes))  # 3d vertex
+        for vertex_index in range(num_vertices):
+            for alpha_index in range(num_delta_shapes):
+                v_target = v_targets[vertex_index]
+                derv_comp = self.calc_partial_derv_comp(vertex_index, in_alphas, alpha_index, v_target)
+                fill_index = vertex_index * 3
+                jacobian[fill_index:fill_index + 3, alpha_index] = derv_comp
+
+        return jacobian
+
+    def test_solve_comp(self, in_alphas, v_targets):
+        alphas = np.copy(in_alphas)
+        print(alphas)
+
+        for i in range(10):
+            jacobian = self.calc_jacobian_comp(alphas, v_targets)
+            A = np.matmul(jacobian.transpose(), jacobian)
+            # print(A)
+            shape = self.forward_pass(alphas)
+            r = v_targets - shape
+            r_flatten = r.flatten()
+            b = -np.matmul(jacobian.transpose(), r_flatten)
+            # print(b)
+
+            gh = scipy.linalg.solve(A, b)
+            # print(gh)
+            alphas += gh
+
+        print(alphas)
+        print('done')
+        return alphas
 
 
 def calc_partial_derv_numerical(in_model, in_alphas, alpha_index, vertex_index, v_target):
@@ -78,6 +122,13 @@ def test_main():
 
     jacobian = face_model.calc_jacobian(alphas1, v_targets)
     print(jacobian)
+
+    jacobian_comp = face_model.calc_jacobian_comp(alphas1, v_targets)
+    print(jacobian_comp)
+
+    alphas2 = face_model.test_solve_comp(alphas1, v_targets)
+    p = face_model.forward_pass(alphas2)
+    print(p)
 
 
 if __name__ == '__main__':
