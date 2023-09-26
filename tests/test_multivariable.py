@@ -64,7 +64,7 @@ class FacePatch:
             # r_norm = np.linalg.norm(r_flatten)
             # print(r_norm)
 
-            # <<methods for non-linear least squares problems>>,  page 23
+            # <<methods for non-linear least squares problems>>, page 23
             A = np.matmul(jacobian.transpose(), jacobian)
             # print(A)
             b = -np.matmul(jacobian.transpose(), r_flatten)
@@ -133,9 +133,29 @@ def test_main_3():
     jacobian_comp = face_model.calc_f_jacobian_cwise(alphas1, v_targets)
     print(jacobian_comp)
 
-    alphas2 = face_model.solve_alphas_cwise(alphas1, v_targets, 100)
-    p = face_model.forward_pass(alphas2)
-    print(p)
+    alphas_best = face_model.solve_alphas_cwise(alphas1, v_targets, 100)
+    v_best = face_model.forward_pass(alphas_best)
+    print(v_best)
+    r_best = v_targets - v_best
+    r_best_norm = np.linalg.norm(r_best)
+    print(r_best)
+    print(r_best_norm)
+
+    eps = 0.00001
+    alphas_perbs = []
+    alphas_perbs.append(alphas_best - np.array([eps, 0, 0]))
+    alphas_perbs.append(alphas_best + np.array([eps, 0, 0]))
+    alphas_perbs.append(alphas_best - np.array([0, eps, 0]))
+    alphas_perbs.append(alphas_best + np.array([0, eps, 0]))
+    alphas_perbs.append(alphas_best - np.array([0, 0, eps]))
+    alphas_perbs.append(alphas_best + np.array([0, 0, eps]))
+
+    for i in range(len(alphas_perbs)):
+        v = face_model.forward_pass(alphas_perbs[i])
+        r = v_targets - v
+        r_norm = np.linalg.norm(r)
+        print(r_norm)
+        assert(r_norm > r_best_norm)
 
 
 if __name__ == '__main__':
