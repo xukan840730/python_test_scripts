@@ -20,12 +20,12 @@ class FacePatch:
         t = np.dot(alphas, self._deltas)
         return self._neutral + t
 
-    def calc_f_partial_derv_comp(self, vertex_index, alphas, alpha_index, v_target):
+    def calc_f_partial_derv_cwise(self, vertex_index, alphas, alpha_index, v_target):
         vertex_deltas = self._deltas[vertex_index]
         d = vertex_deltas[:, alpha_index]
         return -d
 
-    def calc_f_jacobian_comp(self, in_alphas, v_targets):
+    def calc_f_jacobian_cwise(self, in_alphas, v_targets):
         num_vertices = self.get_num_vertices()
         assert (v_targets.shape[0] == num_vertices)
         num_delta_shapes = self.get_num_delta_shapes()
@@ -34,18 +34,18 @@ class FacePatch:
         for vertex_index in range(num_vertices):
             v_target = v_targets[vertex_index]
             for alpha_index in range(num_delta_shapes):
-                derv_comp = self.calc_f_partial_derv_comp(vertex_index, in_alphas, alpha_index, v_target)
+                derv_comp = self.calc_f_partial_derv_cwise(vertex_index, in_alphas, alpha_index, v_target)
                 fill_index = vertex_index * 3
                 jacobian[fill_index:fill_index + 3, alpha_index] = derv_comp
 
         return jacobian
 
-    def test_solve_comp(self, in_alphas, v_targets, in_max_iter):
+    def solve_alphas_cwise(self, in_alphas, v_targets, in_max_iter):
         alphas = np.copy(in_alphas)
         print(alphas)
 
         for i in range(in_max_iter):
-            jacobian = self.calc_f_jacobian_comp(alphas, v_targets)
+            jacobian = self.calc_f_jacobian_cwise(alphas, v_targets)
 
             # validation:
             for vertex_index in range(self.get_num_vertices()):
@@ -64,6 +64,7 @@ class FacePatch:
             # r_norm = np.linalg.norm(r_flatten)
             # print(r_norm)
 
+            # <<methods for non-linear least squares problems>>,  page 23
             A = np.matmul(jacobian.transpose(), jacobian)
             # print(A)
             b = -np.matmul(jacobian.transpose(), r_flatten)
@@ -129,10 +130,10 @@ def test_main_3():
             str += f' [{d2_c0, d2_c1, d2_c2}] '
         print(str)
 
-    jacobian_comp = face_model.calc_f_jacobian_comp(alphas1, v_targets)
+    jacobian_comp = face_model.calc_f_jacobian_cwise(alphas1, v_targets)
     print(jacobian_comp)
 
-    alphas2 = face_model.test_solve_comp(alphas1, v_targets, 100)
+    alphas2 = face_model.solve_alphas_cwise(alphas1, v_targets, 100)
     p = face_model.forward_pass(alphas2)
     print(p)
 
