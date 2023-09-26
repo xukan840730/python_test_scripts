@@ -12,7 +12,7 @@ class FacePatch:
         return self._neutral.shape[0]
 
     def get_num_delta_shapes(self):
-        return self._deltas.shape[0]
+        return self._deltas.shape[1]
 
     def forward_pass(self, alphas):  # alpha: deltas weights
         assert(alphas.shape[0] == self._deltas.shape[1])
@@ -24,6 +24,19 @@ class FacePatch:
         f = v_target - (self._neutral[vertex_index] + np.dot(alphas, vertex_deltas))
         t3 = np.dot(f, vertex_deltas[alpha_index])
         return -2 * t3
+
+    def calc_jacobian(self, in_alphas, v_targets):
+        num_vertices = self.get_num_vertices()
+        assert (v_targets.shape[0] == num_vertices)
+        num_delta_shapes = self.get_num_delta_shapes()
+
+        jacobian = np.zeros((num_vertices, num_delta_shapes))
+        for vertex_index in range(num_vertices):
+            for alpha_index in range(num_delta_shapes):
+                v_target = v_targets[vertex_index]
+                jacobian[vertex_index, alpha_index] = self.calc_partial_derv(vertex_index, in_alphas, alpha_index, v_target)
+
+        return jacobian
 
 
 def calc_partial_derv_numerical(in_model, in_alphas, alpha_index, vertex_index, v_target):
@@ -39,9 +52,6 @@ def calc_partial_derv_numerical(in_model, in_alphas, alpha_index, vertex_index, 
 
 
 def test_main():
-    # patch_target = np.array([[1.3, 1.4, 1.5], [2.3, 2.4, 2.5]])
-    # num_patches = patch_target.shape[0]
-
     patch_neutral = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4]])
     patches_deltas = np.array(
         [[[1, 0, 0], [0, 0.5, 0], [0, 0, 2]],  # deltas for the first vertex
@@ -56,13 +66,18 @@ def test_main():
     shape1 = face_model.forward_pass(alphas1)
     print(shape1)
 
-    v1_target = [1.3, 1.4, 1.5]
+    v_targets = np.array([[1.3, 1.4, 1.5], [2.3, 2.4, 2.5], [3.1, 3.2, 3.3], [4.3, 4.2, 4.1]])
 
     for alpha_index in range(3):
+        str = ''
         for vertex_index in range(4):
-            d1 = face_model.calc_partial_derv(vertex_index, alphas1, alpha_index, v1_target)
-            d2 = calc_partial_derv_numerical(face_model, alphas1, alpha_index, vertex_index, v1_target)
-            print(f'{d1}, {d2}')
+            d1 = face_model.calc_partial_derv(vertex_index, alphas1, alpha_index, v_targets[vertex_index])
+            d2 = calc_partial_derv_numerical(face_model, alphas1, alpha_index, vertex_index, v_targets[vertex_index])
+            str += f' [{d2}] '
+        print(str)
+
+    jacobian = face_model.calc_jacobian(alphas1, v_targets)
+    print(jacobian)
 
 
 if __name__ == '__main__':
