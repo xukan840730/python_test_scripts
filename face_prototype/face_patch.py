@@ -88,14 +88,16 @@ class FacePatch:
         return alphas
 
     # solve_alphas_cwise_2: use w_sparse to encourage weights to stay sparse.
-    def solve_alphas_cwise_2(self, in_alphas, w_sparse, v_targets, in_max_iter):
+    def solve_alphas_cwise_2(self, in_alphas, v_targets, in_max_iter, w_fit, w_sparse):
+        assert isinstance(w_fit, float)
+        assert isinstance(w_sparse, float)
         alphas = np.copy(in_alphas)
         num_alphas = alphas.shape[0]
         # print(alphas)
 
         for i in range(in_max_iter):
             # jacobian1: fit part
-            jacobian1 = self.calc_f_jacobian_cwise(alphas, v_targets)
+            jacobian1 = self.calc_f_jacobian_cwise(alphas, v_targets) * w_fit
 
             # validation:
             # for vertex_index in range(self.get_num_vertices()):
@@ -115,11 +117,11 @@ class FacePatch:
             jacobian = np.vstack((jacobian1, jacobian2))
 
             shape = self.forward_pass(alphas)
-            r1 = v_targets - shape
+            r1 = (v_targets - shape) * w_fit
             r1_flatten = r1.flatten()
             # r_norm = np.linalg.norm(r_flatten)
             # print(r_norm)
-            r2 = np.copy(alphas) * w_sparse
+            r2 = alphas * w_sparse
             r_flatten = np.concatenate((r1_flatten, r2), axis=0)
 
             # <<methods for non-linear least squares problems>>, page 23

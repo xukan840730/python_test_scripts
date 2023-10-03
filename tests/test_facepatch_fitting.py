@@ -19,9 +19,9 @@ def test_misc(face_model, alphas1, v_targets):
     print(jacobian_comp)
 
 
-def calc_r_norm(face_model, alphas, w_sparse, v_targets):
+def calc_r_norm(face_model, alphas, v_targets, w_fit, w_sparse):
     v = face_model.forward_pass(alphas)
-    r1 = v_targets - v
+    r1 = (v_targets - v) * w_fit
     r1_flatten = r1.flatten()
     r2 = alphas * w_sparse
     r_flatten = np.concatenate((r1_flatten, r2), axis=0)
@@ -32,7 +32,7 @@ def test_solve1(face_model, alphas1, v_targets):
     print('test_solve1:')
     alphas_best = face_model.solve_alphas_cwise(alphas1, v_targets, 100)
     print(f'alphas_best:{alphas_best}')
-    r_best_norm = calc_r_norm(face_model, alphas_best, 0.0, v_targets)
+    r_best_norm = calc_r_norm(face_model, alphas_best, v_targets, 1.0, 0.0)
     print(f'r_best_norm:{r_best_norm}')
 
     eps = 0.0001
@@ -45,17 +45,18 @@ def test_solve1(face_model, alphas1, v_targets):
     alphas_perbs.append(alphas_best + np.array([0, 0, eps]))
 
     for i in range(len(alphas_perbs)):
-        r_norm = calc_r_norm(face_model, alphas_perbs[i], 0.0, v_targets)
+        r_norm = calc_r_norm(face_model, alphas_perbs[i], v_targets, 1.0, 0.0)
         print(r_norm - r_best_norm)
         assert(r_norm > r_best_norm)
 
 
 def test_solve2(face_model, alphas, v_targets):
     print('test_solve2:')
-    w_sparse = 5.0
-    alphas_best = face_model.solve_alphas_cwise_2(alphas, w_sparse, v_targets, 100)
+    w_fit = 1.0
+    w_sparse = 1.0
+    alphas_best = face_model.solve_alphas_cwise_2(alphas, v_targets, 100, w_fit, w_sparse)
     print(f'alphas_best:{alphas_best}')
-    r_best_norm = calc_r_norm(face_model, alphas_best, w_sparse, v_targets)
+    r_best_norm = calc_r_norm(face_model, alphas_best, v_targets, w_fit, w_sparse)
     print(f'r_best_norm:{r_best_norm}')
 
     eps = 0.0001
@@ -68,7 +69,7 @@ def test_solve2(face_model, alphas, v_targets):
     alphas_perbs.append(alphas_best + np.array([0, 0, eps]))
 
     for i in range(len(alphas_perbs)):
-        r_norm = calc_r_norm(face_model, alphas_perbs[i], w_sparse, v_targets)
+        r_norm = calc_r_norm(face_model, alphas_perbs[i], v_targets, w_fit, w_sparse)
         print(r_norm - r_best_norm)
         assert(r_norm > r_best_norm)
 
