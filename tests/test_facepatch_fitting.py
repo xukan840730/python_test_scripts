@@ -3,24 +3,7 @@ import numpy as np
 from face_prototype.face_patch import *
 
 
-def test_main_3():
-    patch_neutral = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4]])
-    patches_deltas = np.array(
-        [# [[1, 0, 0], [0, 0.5, 0], [0, 0, 2]],  # deltas for the first vertex
-         [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-         [[1, 0, 0], [0, 1, 0], [0, 0, 1]],  # deltas for the second vertex
-         [[0.5, 0, 0], [0, 0.5, 0], [0, 0, 0.5]],  # deltas for the third vertex
-         [[0.3, 0, 0], [0, 0.3, 0], [0, 0, 0.3]]],
-    )
-
-    face_model = FacePatch(patch_neutral, patches_deltas)
-
-    alphas1 = np.array([0.1, 0.2, 0.3])
-    shape1 = face_model.forward_pass(alphas1)
-    print(shape1)
-
-    v_targets = np.array([[1.3, 1.4, 1.5], [2.3, 2.4, 2.5], [3.1, 3.2, 3.3], [4.3, 4.2, 4.1]])
-
+def test_misc(face_model, alphas1, v_targets):
     print("valid1:")
     for vertex_index in range(4):
         v_target = v_targets[vertex_index]
@@ -35,7 +18,10 @@ def test_main_3():
     jacobian_comp = face_model.calc_f_jacobian_cwise(alphas1, v_targets)
     print(jacobian_comp)
 
+
+def test_solve1(face_model, alphas1, v_targets):
     alphas_best = face_model.solve_alphas_cwise(alphas1, v_targets, 100)
+    print(f'alphas_best:{alphas_best}')
     v_best = face_model.forward_pass(alphas_best)
     print(v_best)
     r_best = v_targets - v_best
@@ -58,6 +44,37 @@ def test_main_3():
         r_norm = np.linalg.norm(r)
         print(r_norm)
         assert(r_norm > r_best_norm)
+
+
+def test_solve2(face_model, alphas1, v_targets):
+    alphas_best_2 = face_model.solve_alphas_cwise_2(alphas1, 1.0, v_targets, 100)
+    print(f'alphas_best_2:{alphas_best_2}')
+    v_best_2 = face_model.forward_pass(alphas_best_2)
+    print(v_best_2)
+
+
+def test_main_3():
+    patch_neutral = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4]])
+    patches_deltas = np.array(
+        [# [[1, 0, 0], [0, 0.5, 0], [0, 0, 2]],  # deltas for the first vertex
+         [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+         [[1, 0, 0], [0, 1, 0], [0, 0, 1]],  # deltas for the second vertex
+         [[0.5, 0, 0], [0, 0.5, 0], [0, 0, 0.5]],  # deltas for the third vertex
+         [[0.3, 0, 0], [0, 0.3, 0], [0, 0, 0.3]]],
+    )
+
+    face_model = FacePatch(patch_neutral, patches_deltas)
+
+    alphas1 = np.array([0.1, 0.2, 0.3])
+    shape1 = face_model.forward_pass(alphas1)
+    print(shape1)
+
+    v_targets = np.array([[1.3, 1.4, 1.5], [2.3, 2.4, 2.5], [3.1, 3.2, 3.3], [4.3, 4.2, 4.1]])
+
+    test_misc(face_model, alphas1, v_targets)
+    test_solve1(face_model, alphas1, v_targets)
+    test_solve2(face_model, alphas1, v_targets)
+
 
 
 if __name__ == '__main__':

@@ -40,6 +40,7 @@ class FacePatch:
 
         return jacobian
 
+    # version 1: alphas can be arbitrary. It's probably useless in real case.
     def solve_alphas_cwise(self, in_alphas, v_targets, in_max_iter):
         alphas = np.copy(in_alphas)
         # print(alphas)
@@ -63,6 +64,63 @@ class FacePatch:
             r_flatten = r.flatten()
             # r_norm = np.linalg.norm(r_flatten)
             # print(r_norm)
+
+            # <<methods for non-linear least squares problems>>, page 23
+            A = np.matmul(jacobian.transpose(), jacobian)
+            # print(A)
+            b = -np.matmul(jacobian.transpose(), r_flatten)
+            # print(b)
+            gh1 = scipy.linalg.solve(A, b)
+            # print(gh1)
+            alphas += gh1
+            if np.linalg.norm(gh1) < 0.00001:
+                break
+
+            # matrix inverse is slow
+            # gh3 = np.linalg.inv(jacobian.T @ jacobian) @ jacobian.T @ r_flatten
+            # # print(gh3)
+            # alphas -= gh3
+            # if np.linalg.norm(gh3) < 0.00000001:
+            #     break
+
+        # print(alphas)
+        # print('done')
+        return alphas
+
+    # solve_alphas_cwise_2: use w_sparse to encourage weights to stay sparse.
+    def solve_alphas_cwise_2(self, in_alphas, w_sparse, v_targets, in_max_iter):
+        alphas = np.copy(in_alphas)
+        num_alphas = alphas.shape[0]
+        # print(alphas)
+
+        for i in range(in_max_iter):
+            # jacobian1: fit part
+            jacobian1 = self.calc_f_jacobian_cwise(alphas, v_targets)
+
+            # validation:
+            # for vertex_index in range(self.get_num_vertices()):
+            #     v_target = v_targets[vertex_index]
+            #     for alpha_index in range(self.get_num_delta_shapes()):
+            #         d_c0 = calc_partial_derv_numerical_cwise(self, alphas, alpha_index, vertex_index, v_target, 0)
+            #         d_c1 = calc_partial_derv_numerical_cwise(self, alphas, alpha_index, vertex_index, v_target, 1)
+            #         d_c2 = calc_partial_derv_numerical_cwise(self, alphas, alpha_index, vertex_index, v_target, 2)
+            #         assert (abs(jacobian[vertex_index * 3 + 0, alpha_index] - d_c0) < 0.0001)
+            #         assert (abs(jacobian[vertex_index * 3 + 1, alpha_index] - d_c1) < 0.0001)
+            #         assert (abs(jacobian[vertex_index * 3 + 2, alpha_index] - d_c2) < 0.0001)
+
+            # jacobian2: sparse part
+            jacobian2 = np.identity(num_alphas) * w_sparse
+
+            # full jacobian:
+            jacobian = np.vstack((jacobian1, jacobian2))
+
+            shape = self.forward_pass(alphas)
+            r1 = v_targets - shape
+            r1_flatten = r1.flatten()
+            # r_norm = np.linalg.norm(r_flatten)
+            # print(r_norm)
+            r2 = np.copy(alphas) * w_sparse
+            r_flatten = np.concatenate((r1_flatten, r2), axis=0)
 
             # <<methods for non-linear least squares problems>>, page 23
             A = np.matmul(jacobian.transpose(), jacobian)
