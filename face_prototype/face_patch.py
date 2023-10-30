@@ -22,7 +22,7 @@ class FacePatch:
 
     def calc_f_partial_derv_cwise(self, vertex_index, alphas, alpha_index, v_target):
         vertex_deltas = self._deltas[vertex_index]
-        d = vertex_deltas[:, alpha_index]
+        d = vertex_deltas[alpha_index]  # was d = vertex_deltas[:, alpha_index]
         return -d
 
     def calc_f_jacobian_cwise(self, in_alphas, v_targets):
