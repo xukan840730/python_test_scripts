@@ -42,7 +42,7 @@ def points_fit_plane(points):
 
 
 def test_main():
-    with open('test.npy', 'rb') as f:
+    with open('test_patch_892.npy', 'rb') as f:
         points = np.load(f)
         print(points)
 
@@ -60,7 +60,7 @@ def test_main():
             dists2[i_vertex] = np.linalg.norm(points_proj[i_vertex] - centroid_proj)
 
         best_index = np.argmin(dists2)
-        best_center_pos = points[best_index]
+        best_center_pos = points_proj[best_index]
 
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
@@ -68,7 +68,7 @@ def test_main():
         points_x = points[:, 0]
         points_y = points[:, 1]
         points_z = points[:, 2]
-        # ax.scatter(points_x, points_y, points_z, color='b')
+        ax.scatter(points_x, points_y, points_z, color='b')
 
         points_proj_x = points_proj[:, 0]
         points_proj_y = points_proj[:, 1]
