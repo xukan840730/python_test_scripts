@@ -16,6 +16,12 @@ def simple_spring_damper_exact_inv(x, v, x_goal, halflife_inv, dt):
     return x, v
 
 
+def double_spring_damper_exact_inv(x, xi, v, vi, x_goal, halflife_inv, dt):
+    new_xi, new_vi = simple_spring_damper_exact_inv(xi, vi, x_goal, 2.0 * halflife_inv, dt)
+    new_x, new_v = simple_spring_damper_exact_inv(x, v, new_xi, 2.0 * halflife_inv, dt)
+    return new_x, new_xi, new_v, new_vi
+
+
 def timed_spring_damper_exact_inv(x, v, xi, x_goal, t_goal, halflife_inv, dt, apprehension=2.0):
     min_time = max(t_goal, dt)
     v_goal = (x_goal - xi) / min_time
@@ -35,6 +41,18 @@ def generate_curve_inv(x0, x_goal, halflife_inv, dt, iter_count):
     v = 0.0
     for i in range(iter_count):
         x, v = simple_spring_damper_exact_inv(x, v, x_goal, halflife_inv, dt)
+        xs.append(x)
+    return xs
+
+
+def generate_double_spring_curve_inv(x0, x_goal, halflife_inv, dt, iter_count):
+    xs = [x0]
+    x = x0
+    xi = x
+    v = 0.0
+    vi = v
+    for i in range(iter_count):
+        x, xi, v, vi = double_spring_damper_exact_inv(x, xi, v, vi, x_goal, halflife_inv, dt)
         xs.append(x)
     return xs
 
